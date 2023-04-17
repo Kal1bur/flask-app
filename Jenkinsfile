@@ -1,4 +1,9 @@
 pipeline {
+  environment {
+    registry = 'kal1bur/flask_app'
+    registryCredentials = 'docker'
+    cluster_name = 'skillstorm'
+  }
   agent {
     node {
       label 'docker'
@@ -12,23 +17,41 @@ pipeline {
       }
     }
 
-    stage('Build') {
+    stage(Build Stage) {
       steps {
-        sh 'docker build -t kal1bur/flask_app .'
+        script {
+          dockerImage = docker.build(registry)
+        }
       }
     }
 
-    stage('Docker login') {
+    stage(Deploy Stage) {
       steps {
-        sh 'docker login -u kal1bur -p dckr_pat_b_H1GuZqdgNbWIPVBOijmceiirc'
+        script {
+          docker.withRegistry('', registryCredentials) {
+            dockerImage.push()
+          }
+        }
       }
     }
 
-    stage('Docker Push') {
-      steps {
-        sh 'docker push kal1bur/flask-app'
-      }
-    }
+    // stage('Build') {
+    //   steps {
+    //     sh 'docker build -t kal1bur/flask_app .'
+    //   }
+    // }
+
+    // stage('Docker login') {
+    //   steps {
+    //     sh 'docker login -u kal1bur -p dckr_pat_b_H1GuZqdgNbWIPVBOijmceiirc'
+    //   }
+    // }
+
+    // stage('Docker Push') {
+    //   steps {
+    //     sh 'docker push kal1bur/flask-app'
+    //   }
+    // }
 
   }
 }
