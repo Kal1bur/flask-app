@@ -17,7 +17,7 @@ pipeline {
       }
     }
 
-    stage(Build Stage) {
+    stage('Build Stage') {
       steps {
         script {
           dockerImage = docker.build(registry)
@@ -25,7 +25,7 @@ pipeline {
       }
     }
 
-    stage(Deploy Stage) {
+    stage('Deploy Stage') {
       steps {
         script {
           docker.withRegistry('', registryCredentials) {
