@@ -3,6 +3,7 @@ pipeline {
     registry = 'kal1bur/flask_app'
     registryCredentials = 'docker'
     cluster_name = 'skillstorm'
+    namespace = 'kal1bur'
   }
   agent {
     node {
@@ -17,7 +18,7 @@ pipeline {
       }
     }
 
-    stage(Build Stage) {
+    stage('Build Stage') {
       steps {
         script {
           dockerImage = docker.build(registry)
@@ -25,12 +26,29 @@ pipeline {
       }
     }
 
-    stage(Deploy Stage) {
+    stage('Deploy Stage') {
       steps {
         script {
           docker.withRegistry('', registryCredentials) {
             dockerImage.push()
           }
+        }
+      }
+    }
+
+    stage('Kubernetes') {
+      steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', cerdentialsID: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh "aws eks update-kubeconfig --region us-east-1 --name ${cluster_name}"
+          script{
+            try{
+              sh "kubectl create namespace ${namespace}"
+            } catch (Exception e) {
+              echo "Exception handled"
+            }
+          } 
+          sh "kubectl apply -f deployment.yaml -n ${namespace}"
+          sh "kubectl -n ${namespace} rollout restart deployment flaskcontainer"
         }
       }
     }
